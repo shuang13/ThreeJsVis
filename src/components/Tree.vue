@@ -9,8 +9,8 @@
 
 <script>
 
-import { WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, PointLight, AmbientLight, Group,Vector2, Vector3, Matrix4, Euler, Quaternion, SphereGeometry, MeshLambertMaterial, InstancedMesh, LineBasicMaterial, SpriteMaterial, Geometry, Line, Texture, Sprite, AxesHelper, Raycaster} from 'three'
 
+import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 import { GUI } from 'dat.gui'
@@ -67,7 +67,7 @@ export default {
       this.height = window.innerHeight;
       // 防锯齿
       var devicePixelRatio = window.devicePixelRatio;
-      this.renderer = new WebGLRenderer({
+      this.renderer = new THREE.WebGLRenderer({
               antialias: true,
           });
       this.renderer.setPixelRatio(devicePixelRatio);
@@ -76,12 +76,12 @@ export default {
       this.$refs.container.appendChild(this.renderer.domElement);
     },
     initScene() {
-      this.scene = new Scene();
+      this.scene = new THREE.Scene();
     },
     initCamera() {
       // this.camera = new OrthographicCamera(this.width / - 2, this.width / 2, this.height / 2,   this.height / - 2, 0, 10000);
   
-      this.camera = new PerspectiveCamera( 45, this.width/this.height, 1, 10000);
+      this.camera = new THREE.PerspectiveCamera( 45, this.width/this.height, 1, 10000);
       this.camera.position.set(300, 300, 300);
       this.camera.up.x = 0; 
       this.camera.up.y = 1; 
@@ -99,15 +99,15 @@ export default {
   
     },    
     initLight() {
-      this.pointLight = new PointLight(0xffffff);
+      this.pointLight = new THREE.PointLight(0xffffff);
       this.pointLight.position.set(4000, 2000, 3000);
-      this.ambient = new AmbientLight(0x444444);
+      this.ambient = new THREE.AmbientLight(0x444444);
       this.scene.add(this.pointLight);
       this.scene.add(this.ambient);
     },
    
     initObject() {
-      this.group = new Group();
+      this.group = new THREE.Group();
   
       while(this.data.edges.length < this.options.edgesNumber) {
         let source = Math.floor((Math.random()*this.options.nodesNumber));
@@ -170,10 +170,10 @@ export default {
       })
     },
     randomizeMatrix(matrix) {
-      let position = new Vector3();
-      let rotation = new Euler();
-      let quaternion = new Quaternion();
-      let scale = new Vector3();
+      let position = new THREE.Vector3();
+      let rotation = new THREE.Euler();
+      let quaternion = new THREE.Quaternion();
+      let scale = new THREE.Vector3();
   
   
       position.x = Math.floor(Math.random() * this.options.randomSize - this.options.randomSize/2) * this.options.nodesDistance;
@@ -193,35 +193,35 @@ export default {
   
     },
     drawNodes(nodesData) {
-      var geometry = new SphereGeometry(this.options.nodesRadius, this.options.nodesRadius, this.options.nodesRadius); 
-      var material = new MeshLambertMaterial({
+      var geometry = new THREE.SphereGeometry(this.options.nodesRadius, this.options.nodesRadius, this.options.nodesRadius); 
+      var material = new THREE.MeshLambertMaterial({
         color: this.options.color
       });
-      var mesh = new InstancedMesh(geometry, material, this.options.nodesNumber);
+      var mesh = new THREE.InstancedMesh(geometry, material, this.options.nodesNumber);
       mesh.name = 'nodes';
       for (let i = 0; i < this.options.nodesNumber; i++) {
-        let matrix = new Matrix4();
+        let matrix = new THREE.Matrix4();
         this.randomizeMatrix(matrix);
         mesh.setMatrixAt(i, matrix);
       }
       this.group.add(mesh);
       let nodes = [];
       nodesData.forEach(function(arr) {
-        let node = new Vector3(arr[0], arr[1], arr[2]);
+        let node = new THREE.Vector3(arr[0], arr[1], arr[2]);
         nodes.push(node);
       })
       return nodes;
     },
     drawLine(nodes, edges) {
-      let material = new LineBasicMaterial({
+      let material = new THREE.LineBasicMaterial({
         color: 0xffffff,
       });
-      var group = new Group();
+      var group = new THREE.Group();
       group.name = 'edges';
       this.data.edges.forEach(function(edge) {
-        let geometry = new Geometry(); 
+        let geometry = new THREE.Geometry(); 
       geometry.vertices = [nodes[edge[0]], nodes[edge[1]]];
-        let line = new Line(geometry, material);
+        let line = new THREE.Line(geometry, material);
         group.add(line);
       })
       this.group.add(group);
@@ -236,40 +236,40 @@ export default {
     },
     initAxis() {
       //中心定位坐标轴
-      let axisHelper = new AxesHelper(this.options.imgSize);
+      let axisHelper = new THREE.AxesHelper(this.options.imgSize);
       this.group.add(axisHelper);
       
-      var groupAxis = new Group();
+      var groupAxis = new THREE.Group();
       groupAxis.name = 'Axis';
-      var groupxz = new Group();
+      var groupxz = new THREE.Group();
       groupxz.name = 'planeXZ';
-      var groupxy = new Group();
+      var groupxy = new THREE.Group();
       groupxy.name = 'planeXY';
-      var groupyz = new Group();
+      var groupyz = new THREE.Group();
       groupyz.name = 'planeYZ';
-      var groupTextX = new Group();
+      var groupTextX = new THREE.Group();
       groupTextX .name = 'textX';
-      var groupTextY = new Group();
+      var groupTextY = new THREE.Group();
       groupTextY .name = 'textY';
-      var groupTextZ = new Group();
+      var groupTextZ = new THREE.Group();
       groupTextZ .name = 'textZ';
-      var strX = new Group();
+      var strX = new THREE.Group();
       strX .name = 'strX';
-      var strY = new Group();
+      var strY = new THREE.Group();
       strY.name = 'strY';
-      var strZ = new Group();
+      var strZ = new THREE.Group();
       strZ.name = 'strZ';
-      var material = new LineBasicMaterial({
+      var material = new THREE.LineBasicMaterial({
             color: 0xffffff,
         });
       //x-z面
-      var geometryXZ = new Geometry();
-      geometryXZ.vertices.push(new Vector3(-this.options.imgSize, 0, 0));
-      geometryXZ.vertices.push(new Vector3(this.options.imgSize, 0, 0));
+      var geometryXZ = new THREE.Geometry();
+      geometryXZ.vertices.push(new THREE.Vector3(-this.options.imgSize, 0, 0));
+      geometryXZ.vertices.push(new THREE.Vector3(this.options.imgSize, 0, 0));
       for(let i = 0; i <= this.options.imgSize * 2 / this.divisions; i++) {
-          var linex = new Line(geometryXZ, material);
+          var linex = new THREE.Line(geometryXZ, material);
           linex.position.z = i * this.divisions - this.options.imgSize;
-          var liney = new Line(geometryXZ, material);
+          var liney = new THREE.Line(geometryXZ, material);
           liney.position.x = i * this.divisions - this.options.imgSize;
           liney.rotation.y = Math.PI * 3/ 2;
           groupxz.add(linex);
@@ -279,13 +279,13 @@ export default {
     
       //x-y面
     
-      var geometryXY = new Geometry();
-      geometryXY.vertices.push(new Vector3(-this.options.imgSize, 0, 0));
-      geometryXY.vertices.push(new Vector3(this.options.imgSize, 0, 0));
+      var geometryXY = new THREE.Geometry();
+      geometryXY.vertices.push(new THREE.Vector3(-this.options.imgSize, 0, 0));
+      geometryXY.vertices.push(new THREE.Vector3(this.options.imgSize, 0, 0));
       for(let i = 0; i <= this.options.imgSize * 2 / this.divisions; i++) {
-        var linex = new Line(geometryXY, material);
+        var linex = new THREE.Line(geometryXY, material);
         linex.position.y = i * this.divisions - this.options.imgSize;
-        var liney = new Line(geometryXY, material);
+        var liney = new THREE.Line(geometryXY, material);
         liney.position.x = i * this.divisions - this.options.imgSize;
         liney.rotation.z = Math.PI * 3/ 2;
         groupxy.add(linex);
@@ -294,14 +294,14 @@ export default {
       groupAxis.add(groupxy);
         //y-z面
     
-      var geometryYZ = new Geometry();
-      geometryYZ.vertices.push(new Vector3(0, 0, -this.options.imgSize));
-      geometryYZ.vertices.push(new Vector3(0, 0, this.options.imgSize));
+      var geometryYZ = new THREE.Geometry();
+      geometryYZ.vertices.push(new THREE.Vector3(0, 0, -this.options.imgSize));
+      geometryYZ.vertices.push(new THREE.Vector3(0, 0, this.options.imgSize));
       for(let i = 0; i <= this.options.imgSize * 2 / this.divisions; i++) {
-          var linex = new Line(geometryYZ, material);
+          var linex = new THREE.Line(geometryYZ, material);
           linex.position.y = i * this.divisions - this.options.imgSize;
           groupyz.add(linex);
-          var liney = new Line(geometryYZ, material);
+          var liney = new THREE.Line(geometryYZ, material);
           liney.position.z = i * this.divisions - this.options.imgSize;
           liney.rotation.x = Math.PI * 3/ 2;
           groupyz.add(liney);
@@ -323,13 +323,13 @@ export default {
             fontsize: 18, 
             fontface: "Georgia", 
         });
-        textx.center = new Vector2(0.1, 1);
+        textx.center = new THREE.Vector2(0.1, 1);
         textx.position.set(i * this.divisions - this.options.imgSize, 0, 0);
 
-        texty.center = new Vector2(0, 1);
+        texty.center = new THREE.Vector2(0, 1);
         texty.position.set(0, 0, i * this.divisions - this.options.imgSize);
 
-        textz.center = new Vector2(0.1, 0.9);
+        textz.center = new THREE.Vector2(0.1, 0.9);
         textz.position.set(0, i * this.divisions - this.options.imgSize, 0);
             
         groupTextX.add(textx);
@@ -346,7 +346,7 @@ export default {
         fontsize: 36,
         fontface: "Georgia", 
       });
-      str.center = new Vector2(0, 1);
+      str.center = new THREE.Vector2(0, 1);
       str.position.set(0, 0, 30);
       strX.add(str);
         
@@ -354,7 +354,7 @@ export default {
         fontsize: 36,
         fontface: "Georgia", 
       });
-      str.center = new Vector2(0, 1);
+      str.center = new THREE.Vector2(0, 1);
       str.position.set(0, 0, 0);
       strY.add(str);
       
@@ -363,7 +363,7 @@ export default {
         fontsize: 36,
         fontface: "Georgia", 
       });
-      str.center = new Vector2(0, 1);
+      str.center = new THREE.Vector2(0, 1);
       str.position.set(0, 0, 0);
       strZ.add(str);
         
@@ -372,19 +372,19 @@ export default {
       groupAxis.add(strZ);
     
       // 动态定位轴
-      var coverx = new Group();
+      var coverx = new THREE.Group();
       coverx.name = 'coverX';
-      var coverLine = new Geometry();
-      coverLine.vertices.push(new Vector3(0, 0, 0));
-      coverLine.vertices.push(new Vector3(0, 0, 0));
+      var coverLine = new THREE.Geometry();
+      coverLine.vertices.push(new THREE.Vector3(0, 0, 0));
+      coverLine.vertices.push(new THREE.Vector3(0, 0, 0));
       
-      var line = new Line(coverLine, material);
+      var line = new THREE.Line(coverLine, material);
       coverx.add(line);
       
-      var covery = new Group();
+      var covery = new THREE.Group();
       covery.name = 'coverY';
       covery.add(line.clone());
-      var coverz = new Group();
+      var coverz = new THREE.Group();
       coverz.name = 'coverZ';
       coverz.add(line.clone());
       groupAxis.add(coverx);
@@ -411,14 +411,14 @@ export default {
       context.fillStyle = "rgba(255, 255, 255, 1.0)";
       context.fillText(message, 0, fontsize);
       
-      var texture = new Texture(canvas);
+      var texture = new THREE.Texture(canvas);
       texture.needsUpdate = true;
     
-      var spriteMaterial = new SpriteMaterial({ 
+      var spriteMaterial = new THREE.SpriteMaterial({ 
               map: texture, 
               sizeAttenuation: true
           });
-      var sprite = new Sprite(spriteMaterial);
+      var sprite = new THREE.Sprite(spriteMaterial);
       sprite.scale.set(100, 50, 1.0);
       return sprite;  
     },
@@ -584,8 +584,8 @@ export default {
         this.renderer.setSize(window.innerWidth, window.innerHeight );
     },
     onDocumentMouseMove(e) {
-      let raycaster = new Raycaster();
-      let mouse = new Vector2();
+      let raycaster = new THREE.Raycaster();
+      let mouse = new THREE.Vector2();
       let intersectsObjArr = this.getSelectObj(mouse, raycaster, e);
       let description = this.$refs.description;
       let descriptionText = this.$refs.d_text;
