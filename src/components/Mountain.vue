@@ -29,7 +29,7 @@ export default {
       height: 0,
 
       options: {
-        level: 0,
+        level: 1,
         nodesNumber: 10,
         edgesNumber: 10,
         nodesDistance: 3,
@@ -134,37 +134,89 @@ export default {
       return xhr.status === okStatus ? xhr.responseText : null;
     },
 
-    calculateIsland(grid, i, j, m, n) {
-        if (i <= 0 || i >= m - 1 || j <= 0 || j >= n - 2) {
-            return;
-        }
-        console.log(i, j)
-        if (grid[i][j][2] != 0) {
-            grid[i][j][2] = 0;
-            // this.calculateIsland(grid, i - 1, j, m, n);
-            this.calculateIsland(grid, i + 1, j, m, n);
-            // this.calculateIsland(grid, i, j - 1, m, n);
-            // this.calculateIsland(grid, i, j + 1, m, n);
-        }
-    },
+   
     getNumIslands(grid) {
         var m = grid.length; //500
         var n = grid[0].length; //631
         var res = 0;
-        
-    
-        for (let i = 0; i < m; i++) {
-            for (let j = 0; j < n - 1; j++) {
+        var a = [].concat(grid); 
+        var b = []; //待测数组
+        var c = []; //已测数组
+        for (let i = 0; i < a.length; i++) {
+            for (let j = 0; j < a[i].length; j++) {
+              
+              b.push({
+                x: i,
+                y: j,
+                flag: false,
+              });
+              while(b.length > 0) {
+                for(let i = 0; i < c.length; c++) {
+                  if(c[i].x == b[0].x && c[i].y == b[0].y) {
+                    b.shift();
+                    break;
+                  }
+                }                  
                 
-                if (grid[i][j][2] == 0) {
-                  continue;
-                } else {
-                  res++;
-                  this.calculateIsland(grid, i, j, 2, 10);
+                if(a[b[0].x][b[0].y][2] != 0) {
+                  if(i > 0 && j > 0) 
+                  b.push({
+                    x: i - 1,
+                    y: j - 1,
+                    flag: false,
+                  });
+                  if(i > 0) 
+                  b.push({
+                    x: i - 1,
+                    y: j,
+                    flag: false,
+                  });
+                  if(i > 0 && j < n) 
+                  b.push({
+                    x: i - 1,
+                    y: j + 1,
+                    flag: false,
+                  });
+
+                  if(j > 0) 
+                  b.push({
+                    x: i,
+                    y: j - 1,
+                    flag: false,
+                  });
+                  
+                  if(j < n) 
+                  b.push({
+                    x: i,
+                    y: j + 1,
+                    flag: false,
+                  });
+                  if(i < m && j > 0) 
+                  b.push({
+                    x: i + 1,
+                    y: j - 1,
+                    flag: false,
+                  });
+                  if(i < m) 
+                  b.push({
+                    x: i + 1,
+                    y: j,
+                    flag: false,
+                  });
+                  if(i < m && j < n) 
+                  b.push({
+                    x: i + 1,
+                    y: j + 1,
+                    flag: false,
+                  });
+                  
                 }
+                c.push(b[0])
+                b.shift();
+              }
             }
         }
-        return res;
+        return grid;
     },
     initObject() {
       var v = [];
@@ -193,9 +245,11 @@ export default {
         col = []
         j++;
       }
-      console.log(this.getNumIslands(trace), "!!!");
+      // trace = this.getNumIslands(trace)
       var vBuff = [];
       var vBuff2 = [];
+      var colors = [];
+
       for(let i = 0; i < trace.length - 1; i++) {
         var trace1 = trace[i];
         var trace2 = trace[i + 1];
@@ -221,6 +275,13 @@ export default {
             p1[0], p1[1], - p1[2], 
             p2[0], p2[1], - p2[2], 
             p4[0], p4[1], - p4[2]);
+          colors.push(
+            0.5*p1[2] / 30, 0 ,1-p1[2] / 30, 
+            0.5*p3[2] / 30, 0 ,1-p3[2] / 30, 
+            0.5*p4[2] / 30, 0 ,1-p4[2] / 30, 
+            0.5*p1[2] / 30, 0 ,1-p1[2] / 30, 
+            0.5*p2[2] / 30, 0 ,1-p2[2] / 30, 
+            0.5*p4[2] / 30, 0 ,1-p4[2] / 30);
         }
       }
       
@@ -228,6 +289,7 @@ export default {
       var geometry = new THREE.BufferGeometry();
       var vertices = new Float32Array(vBuff);
       var attribue = new THREE.BufferAttribute(vertices, 3); 
+
       geometry.attributes.position = attribue;
       console.log(geometry)
       geometry.computeVertexNormals();
@@ -242,13 +304,19 @@ export default {
 
       var geometry2 = new THREE.BufferGeometry();
       var vertices2 = new Float32Array(vBuff2);
+      var color2 = new Float32Array(colors);
+
       
+      // 设置几何体attributes属性的颜色color属性
+      geometry2.attributes.color = new THREE.BufferAttribute(color2, 3);
+
       var attribue = new THREE.BufferAttribute(vertices2, 3); 
       geometry2.attributes.position = attribue;
       geometry2.computeVertexNormals();
-      var material = new THREE.MeshNormalMaterial({
-        color: 0x0000ff, 
-        side: THREE.DoubleSide
+
+      var material = new THREE.MeshLambertMaterial({
+        side: THREE.DoubleSide,
+        vertexColors: THREE.VertexColors,
       });
       var mesh2 = new THREE.Mesh(geometry2, material); 
       mesh2.rotation.x = Math.PI / 2;
