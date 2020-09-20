@@ -12,6 +12,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 import { GUI } from 'dat.gui'
+import { Lut } from 'three/examples/jsm/math/Lut.js';
 export default {
   name: 'Mountain',
   data () {
@@ -29,7 +30,7 @@ export default {
       height: 0,
 
       options: {
-        level: 1,
+        level: 0.2,
         limit: 10000,
         nodesNumber: 10,
         edgesNumber: 10,
@@ -81,6 +82,7 @@ export default {
         folderGeometry.add(this.options, 'level', 0, 10).onChange(this.updateScene);
         folderGeometry.add(this.options, 'limit', 100, 50000).onChange(this.updateScene);
         folderGeometry.open();
+        
     },
     updateScene() {
       let meshs = [];
@@ -144,7 +146,7 @@ export default {
         var a = JSON.parse(JSON.stringify(grid)); 
         var b = [];
         for (let i = 0; i < m; i++) {
-            for (let j = 0; j < n - 1; j++) {
+            for (let j = 0; j < n; j++) {
 
               if(a[i][j][2] != 0) {
                 var count = 0;
@@ -193,6 +195,8 @@ export default {
         return res;
     },
     initObject() {
+      
+
       var v = [];
       var vertices = [];
       let data = this.loadFile('./static/Thickness.txt').replace(/\s+/ig," ").split(" ");
@@ -219,13 +223,16 @@ export default {
         col = []
         j++;
       }
-      for(let i = 0; i < trace.length - 1; i++) {
-        for(let j = 0; j < trace[0].length - 2; j++) {
-          if(trace[i][j][2] <= this.options.level) {
+      var m = trace.length; //500
+      var n = trace[0].length; //631
+      for(let i = 0; i < m; i++) {
+        for(let j = 0; j < n; j++) {
+          if(i == 0 || j == 0 || i == m - 1 || j == n - 1|| trace[i][j][2] <= this.options.level) {
             trace[i][j][2] = 0;
           }
         }
       }
+      
       this.getNumIslands(trace);
 
       var vBuff = [];
@@ -235,12 +242,12 @@ export default {
       for(let i = 0; i < trace.length - 1; i++) {
         var trace1 = trace[i];
         var trace2 = trace[i + 1];
-        for(let j = 0; j < trace1.length - 2; j++) {
+        for(let j = 0; j < trace1.length - 1; j++) {
           var p1 = trace1[j];
           var p2 = trace2[j];
           var p3 = trace1[j + 1];
           var p4 = trace2[j + 1];
-          if(trace[i][j][2] <= this.options.level) {
+          if(i !=0 && j != 0 && i != m - 1 && j != n - 1 && trace[i][j][2] <= this.options.level) {
             continue;
           }
           vBuff.push(
@@ -258,47 +265,48 @@ export default {
             p2[0], p2[1], - p2[2], 
             p4[0], p4[1], - p4[2]);
           colors.push(
-            0.5*p1[2] / 30, 0 ,1-p1[2] / 30, 
-            0.5*p3[2] / 30, 0 ,1-p3[2] / 30, 
-            0.5*p4[2] / 30, 0 ,1-p4[2] / 30, 
-            0.5*p1[2] / 30, 0 ,1-p1[2] / 30, 
-            0.5*p2[2] / 30, 0 ,1-p2[2] / 30, 
-            0.5*p4[2] / 30, 0 ,1-p4[2] / 30);
+            1, 1 ,p1[2], 
+            1, 1 ,p3[2], 
+            1, 1 ,p4[2], 
+            1, 1 ,p1[2], 
+            1, 1 ,p2[2], 
+            1, 1 ,p4[2]);
         }
       }
       
       this.group = new THREE.Group();
+      
+
       var geometry = new THREE.BufferGeometry();
       var vertices = new Float32Array(vBuff);
       var attribue = new THREE.BufferAttribute(vertices, 3); 
+      var color = new Float32Array(colors);
+
+      geometry.attributes.color = new THREE.BufferAttribute(color, 3);
 
       geometry.attributes.position = attribue;
       geometry.computeVertexNormals();
-      var material = new THREE.MeshNormalMaterial({
-        color: 0x0000ff, 
-        side: THREE.DoubleSide
+      var material = new THREE.MeshLambertMaterial({
+        side: THREE.DoubleSide,
+        vertexColors: true,
       });
       var mesh = new THREE.Mesh(geometry, material); 
       mesh.rotation.x = Math.PI / 2;
 
       this.group.add(mesh);
 
+
       var geometry2 = new THREE.BufferGeometry();
       var vertices2 = new Float32Array(vBuff2);
-      var color2 = new Float32Array(colors);
 
       
-      // 设置几何体attributes属性的颜色color属性
-      geometry2.attributes.color = new THREE.BufferAttribute(color2, 3);
+      geometry2.attributes.color = new THREE.BufferAttribute(color, 3);
 
       var attribue = new THREE.BufferAttribute(vertices2, 3); 
       geometry2.attributes.position = attribue;
       geometry2.computeVertexNormals();
 
-      var material = new THREE.MeshLambertMaterial({
-        side: THREE.DoubleSide,
-        vertexColors: THREE.VertexColors,
-      });
+      
       var mesh2 = new THREE.Mesh(geometry2, material); 
       mesh2.rotation.x = Math.PI / 2;
 
@@ -308,7 +316,28 @@ export default {
       this.initAxis();
       
       this.scene.add(this.group);
-      
+
+
+
+
+      var lut = new Lut();
+      var params = {
+         colorMap: 'rainbow',
+      };
+
+      lut.setColorMap( params.colorMap );
+
+      lut.setMax(30);
+      lut.setMin(0);
+      geometry = mesh.geometry;
+      geometry2 = mesh2.geometry;
+      colors = geometry.attributes.color;
+
+      for ( var i = 0; i < color.length/3; i ++ ) {
+        var colorValue = color[i*3 + 2];
+        var newcolor = lut.getColor(colorValue);
+        colors.setXYZ( i, newcolor.r, newcolor.g, newcolor.b );
+      }
     },
    
     render() {
