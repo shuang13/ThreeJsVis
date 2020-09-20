@@ -30,6 +30,7 @@ export default {
 
       options: {
         level: 1,
+        limit: 10000,
         nodesNumber: 10,
         edgesNumber: 10,
         nodesDistance: 3,
@@ -78,6 +79,7 @@ export default {
         var gui = new GUI();
         var folderGeometry = gui.addFolder('Geometry');
         folderGeometry.add(this.options, 'level', 0, 10).onChange(this.updateScene);
+        folderGeometry.add(this.options, 'limit', 100, 50000).onChange(this.updateScene);
         folderGeometry.open();
     },
     updateScene() {
@@ -139,84 +141,56 @@ export default {
         var m = grid.length; //500
         var n = grid[0].length; //631
         var res = 0;
-        var a = [].concat(grid); 
-        var b = []; //待测数组
-        var c = []; //已测数组
-        for (let i = 0; i < a.length; i++) {
-            for (let j = 0; j < a[i].length; j++) {
-              
-              b.push({
-                x: i,
-                y: j,
-                flag: false,
-              });
-              while(b.length > 0) {
-                for(let i = 0; i < c.length; c++) {
-                  if(c[i].x == b[0].x && c[i].y == b[0].y) {
-                    b.shift();
-                    break;
-                  }
-                }                  
-                
-                if(a[b[0].x][b[0].y][2] != 0) {
-                  if(i > 0 && j > 0) 
-                  b.push({
-                    x: i - 1,
-                    y: j - 1,
-                    flag: false,
-                  });
-                  if(i > 0) 
-                  b.push({
-                    x: i - 1,
-                    y: j,
-                    flag: false,
-                  });
-                  if(i > 0 && j < n) 
-                  b.push({
-                    x: i - 1,
-                    y: j + 1,
-                    flag: false,
-                  });
+        var a = JSON.parse(JSON.stringify(grid)); 
+        var b = [];
+        for (let i = 0; i < m; i++) {
+            for (let j = 0; j < n - 1; j++) {
 
-                  if(j > 0) 
-                  b.push({
-                    x: i,
-                    y: j - 1,
-                    flag: false,
-                  });
-                  
-                  if(j < n) 
-                  b.push({
-                    x: i,
-                    y: j + 1,
-                    flag: false,
-                  });
-                  if(i < m && j > 0) 
-                  b.push({
-                    x: i + 1,
-                    y: j - 1,
-                    flag: false,
-                  });
-                  if(i < m) 
-                  b.push({
-                    x: i + 1,
-                    y: j,
-                    flag: false,
-                  });
-                  if(i < m && j < n) 
-                  b.push({
-                    x: i + 1,
-                    y: j + 1,
-                    flag: false,
-                  });
-                  
+              if(a[i][j][2] != 0) {
+                var count = 0;
+                var group = [];
+                res++;
+                a[i][j][2] = 0;
+                b.push([i, j]);
+                group.push([i, j]);
+
+                while(b.length > 0) {
+                  var row = b[0][0];
+                  var col = b[0][1];
+                  b.shift();
+                  count++;
+                  if(row - 1 >= 0 && a[row - 1][col][2] != 0) {
+                    b.push([row - 1, col]);
+                    group.push([row - 1, col]);
+                    a[row - 1][col][2] = 0;
+                  }
+                  if(row + 1 < m && a[row + 1][col][2] != 0) {
+                    b.push([row + 1, col]);
+                    group.push([row + 1, col]);
+                    a[row + 1][col][2] = 0;
+
+                  }
+                  if(col - 1 >= 0 && a[row][col - 1][2] != 0) {
+                    b.push([row, col - 1]);
+                    group.push([row, col - 1]);
+                    a[row][col - 1][2] = 0;
+                  }
+                  if(col + 1 < n-1 && a[row][col + 1][2] != 0) {
+                    b.push([row, col + 1]);
+                    group.push([row, col + 1]);
+                    a[row][col + 1][2] = 0;
+                  }
                 }
-                c.push(b[0])
-                b.shift();
+                if(count < this.options.limit) {
+                  for(let k = 0; k < group.length; k++) {
+                    grid[group[k][0]][group[k][1]][2] = 0;
+                  }
+                }
               }
             }
         }
-        return grid;
+
+        return res;
     },
     initObject() {
       var v = [];
@@ -245,7 +219,15 @@ export default {
         col = []
         j++;
       }
-      // trace = this.getNumIslands(trace)
+      for(let i = 0; i < trace.length - 1; i++) {
+        for(let j = 0; j < trace[0].length - 2; j++) {
+          if(trace[i][j][2] <= this.options.level) {
+            trace[i][j][2] = 0;
+          }
+        }
+      }
+      this.getNumIslands(trace);
+
       var vBuff = [];
       var vBuff2 = [];
       var colors = [];
@@ -258,7 +240,7 @@ export default {
           var p2 = trace2[j];
           var p3 = trace1[j + 1];
           var p4 = trace2[j + 1];
-          if(p1[2] + p3[2] + p4[2] <= this.options.level || p1[2] + p2[2] + p4[2] <= this.options.level ) {
+          if(trace[i][j][2] <= this.options.level) {
             continue;
           }
           vBuff.push(
@@ -291,7 +273,6 @@ export default {
       var attribue = new THREE.BufferAttribute(vertices, 3); 
 
       geometry.attributes.position = attribue;
-      console.log(geometry)
       geometry.computeVertexNormals();
       var material = new THREE.MeshNormalMaterial({
         color: 0x0000ff, 
