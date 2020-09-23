@@ -13,18 +13,18 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 
 import { GUI } from 'dat.gui'
 import { Lut } from 'three/examples/jsm/math/Lut.js';
+var scene = null;
+var controls = null;
 export default {
   name: 'Mountain',
   data () {
     return {
       
-      scene: null,
       group: null,
       camera: null,
       pointLight: null,
       ambient: null,
       renderer: null,
-      controls: null,
         
       width: 0,
       height: 0,
@@ -74,7 +74,7 @@ export default {
       this.$refs.container.appendChild(this.renderer.domElement);
     },
     initScene() {
-      this.scene = new THREE.Scene();
+      scene = new THREE.Scene();
     },
     initGUI() {
         var gui = new GUI();
@@ -97,7 +97,7 @@ export default {
         meshs[i].geometry.dispose();
         meshs[i].material.dispose();
       }
-      this.scene.remove(this.group);
+      scene.remove(this.group);
 
       
       this.initObject();
@@ -115,10 +115,10 @@ export default {
         y: 0,
         z: 0
       });
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-      this.controls.enableDamping = true; 
-      this.controls.dampingFactor = 0.05;
-      this.controls.screenSpacePanning = false;
+      controls = new OrbitControls(this.camera, this.renderer.domElement);
+      controls.enableDamping = true; 
+      controls.dampingFactor = 0.05;
+      controls.screenSpacePanning = false;
   
     },    
     initLight() {
@@ -126,8 +126,8 @@ export default {
 
       this.pointLight.position.set(0, 2000, 0);
       this.ambient = new THREE.AmbientLight(0x444444);
-      this.scene.add(this.pointLight);
-      this.scene.add(this.ambient);
+      scene.add(this.pointLight);
+      scene.add(this.ambient);
     },
     loadFile(name) { // name为文件所在位置
       let xhr = new XMLHttpRequest();
@@ -288,7 +288,7 @@ export default {
       geometry.computeVertexNormals();
       var material = new THREE.MeshLambertMaterial({
         side: THREE.DoubleSide,
-        vertexColors: true,
+        vertexColors: THREE.VertexColors,
       });
       var mesh = new THREE.Mesh(geometry, material); 
       mesh.rotation.x = Math.PI / 2;
@@ -304,18 +304,64 @@ export default {
 
       var attribue = new THREE.BufferAttribute(vertices2, 3); 
       geometry2.attributes.position = attribue;
-      geometry2.computeVertexNormals();
 
+
+
+      // var attrib = geometry2.getAttribute('position');
+     
+      // var positions = attrib.array;
+      // var vertices = [];
+      // for(var i = 0, n = positions.length; i <n; i += 3){
+      //     var x = positions[i];
+      //     var y = positions[i + 1];
+      //     var z = positions[i + 2];
+      //     vertices.push(new THREE.Vector3(x, y, z));
+      // }
+      // var faces = [];
+      // for(var i = 0, n = vertices.length; i <n; i += 3){
+      //   let face = new THREE.Face3(i, i + 1, i + 2);
+      //     let color1 = new THREE.Color(0xFF0000);
+      //     face.vertexColors.push(color1, color1,color1);
+      //     faces.push(face);
+
+      // }
+      // var colorOther = [];
+      // for(var i = 0, n = vertices.length; i <n; i ++){
+      //     colorOther.push(new THREE.Color(0xff0000));
+      // }
+      // console.log(vertices)
+      // var geometry3 = new THREE.Geometry();
+      // geometry3.vertices = vertices;
+      // geometry3.faces = faces;
+
+      // geometry3.colors = colorOther;
+      // geometry3.computeFaceNormals();              
+      // geometry3.mergeVertices()
+      // geometry3.computeVertexNormals();
+
+
+
+
+
+
+
+      // geometry2.mergeVertices();
+
+      geometry2.computeFaceNormals();
+      geometry2.computeVertexNormals();
+      material.shading = THREE.SmoothShading;
       
       var mesh2 = new THREE.Mesh(geometry2, material); 
       mesh2.rotation.x = Math.PI / 2;
 
-      this.group.add(mesh2);
+      
 
+      this.group.add(mesh2);
+      console.log(mesh2)
       
       this.initAxis();
       
-      this.scene.add(this.group);
+      scene.add(this.group);
 
 
 
@@ -327,7 +373,7 @@ export default {
 
       lut.setColorMap( params.colorMap );
 
-      lut.setMax(30);
+      lut.setMax(50);
       lut.setMin(0);
       geometry = mesh.geometry;
       geometry2 = mesh2.geometry;
@@ -342,8 +388,8 @@ export default {
    
     render() {
       this.renderer.clear();
-      this.renderer.render(this.scene, this.camera);
-      this.controls.update();
+      this.renderer.render(scene, this.camera);
+      controls.update();
       // this.axisUpdate();
       requestAnimationFrame(this.render);
     },
