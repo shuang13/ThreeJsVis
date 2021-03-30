@@ -7,6 +7,7 @@
 <script>
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import Stats from "three/examples/jsm/libs/stats.module.js";
 
 import { GUI } from "dat.gui";
 export default {
@@ -20,7 +21,7 @@ export default {
       ambient: null,
       renderer: null,
       controls: null,
-
+      stats: null,
       width: 0,
       height: 0,
 
@@ -36,7 +37,7 @@ export default {
         isLightFollowCamera: false,
       },
 
-      divisions: 20,
+      divisions: 200,
 
       data: {
         nodes: [],
@@ -68,6 +69,9 @@ export default {
       this.renderer.setSize(this.width, this.height);
       this.renderer.setClearColor(0x000000, 1);
       this.$refs.container.appendChild(this.renderer.domElement);
+
+      this.stats = new Stats();
+      this.$refs.container.appendChild(this.stats.dom);
     },
     // 场景初始化
     initScene() {
@@ -130,8 +134,8 @@ export default {
         var texture = new THREE.TextureLoader().load(urls[i]);
         switch (i) {
           case 2:
-            // texture.rotation = Math.PI / 2;
-            // texture.center.set(50, 50);
+          // texture.rotation = Math.PI / 2;
+          // texture.center.set(50, 50);
         }
         maps.push(
           new THREE.MeshPhongMaterial({
@@ -143,9 +147,69 @@ export default {
       return new THREE.Mesh(cubeG, maps);
     },
     initObject() {
+      var path = "../../../static/textures/";
+      var format = ".png";
+      var urls = [
+        path + "02" + format, // 右前
+        path + "02" + format, // 右后
+        path + "03" + format, // 上
+        path + "03" + format, // 下
+        path + "01" + format, // 左前
+        path + "01" + format, // 左后
+      ]; //加载6张图
       this.group = new THREE.Group();
-      var cube = this.createCube(100, 100, 100);
-      this.group.add(cube);
+      // var cube = this.createCube(100, 100, 100);
+
+      // this.group.add(cube);
+
+      // 截面
+      var groupImgPlane = new THREE.Group();
+      groupImgPlane.name = "ImgPlane";
+
+      // x视角截面
+      var groupImgPlaneX = new THREE.Group();
+      groupImgPlaneX.name = "ImgPlaneX";
+      var xViewPlaneG = new THREE.PlaneGeometry(this.options.imgSize * 2, this.options.imgSize * 2);
+      var xViewPlaneT = new THREE.TextureLoader().load(urls[0]);
+      var xViewPlaneM = new THREE.MeshPhongMaterial({
+        side: THREE.DoubleSide,
+        map: xViewPlaneT,
+      });
+      var xViewPlane = new THREE.Mesh(xViewPlaneG, xViewPlaneM);
+
+      groupImgPlane.add(xViewPlane);
+
+      // y视角截面
+      var groupImgPlaneY = new THREE.Group();
+      groupImgPlaneY.name = "ImgPlaneY";
+      var yViewPlaneG = new THREE.PlaneGeometry(this.options.imgSize * 2, this.options.imgSize * 2);
+      var yViewPlaneT = new THREE.TextureLoader().load(urls[2]);
+      var yViewPlaneM = new THREE.MeshPhongMaterial({
+        side: THREE.DoubleSide,
+        map: yViewPlaneT,
+      });
+      var yViewPlane = new THREE.Mesh(yViewPlaneG, yViewPlaneM);
+      yViewPlane.rotateX(Math.PI/2)
+
+      groupImgPlane.add(yViewPlane);
+      
+      // z视角截面
+      var groupImgPlaneZ = new THREE.Group();
+      groupImgPlaneZ.name = "ImgPlaneZ";
+      var zViewPlaneG = new THREE.PlaneGeometry(this.options.imgSize * 2, this.options.imgSize * 2);
+      var zViewPlaneT = new THREE.TextureLoader().load(urls[4]);
+      var zViewPlaneM = new THREE.MeshPhongMaterial({
+        side: THREE.DoubleSide,
+        map: zViewPlaneT,
+      });
+      var zViewPlane = new THREE.Mesh(zViewPlaneG, zViewPlaneM);
+      zViewPlane.rotateY(Math.PI/2)
+      groupImgPlane.add(zViewPlane);
+
+
+      this.group.add(groupImgPlane);
+      
+
       this.initAxis();
       this.scene.add(this.group);
     },
@@ -245,10 +309,13 @@ export default {
       // 光照跟随相机
       this.lightFollowCamera();
       this.controls.update();
+      this.stats.update();
       // 坐标轴视图更新
       this.axisUpdate();
+
       requestAnimationFrame(this.render);
     },
+
     // 坐标轴初始化
     initAxis() {
       //中心定位坐标轴
@@ -276,7 +343,8 @@ export default {
       var strZ = new THREE.Group();
       strZ.name = "strZ";
       var material = new THREE.LineBasicMaterial({
-        color: 0xffffff,
+        color: 'red',
+        
       });
       //x-z面
       var geometryXZ = new THREE.Geometry();
@@ -292,6 +360,8 @@ export default {
         groupxz.add(liney);
       }
       groupAxis.add(groupxz);
+
+      
 
       //x-y面
 
@@ -323,6 +393,23 @@ export default {
         groupyz.add(liney);
       }
       groupAxis.add(groupyz);
+
+      //x-z-up面
+      
+      var groupxz_up = groupxz.clone();
+      groupxz_up.name = "planeXZ_up";
+      groupAxis.add(groupxz_up);
+      //x-y-up面
+      
+      var groupxy_up = groupxy.clone();
+      groupxy_up.name = "planeXY_up";
+      groupAxis.add(groupxy_up);
+      //y-z-up面
+      
+      var groupyz_up = groupyz.clone();
+      groupyz_up.name = "planeYZ_up";
+      groupAxis.add(groupyz_up);
+
 
       // 网格坐标数字刻度
       for (let i = 0; i <= (this.options.imgSize * 2) / this.divisions; i++) {
@@ -365,6 +452,7 @@ export default {
       groupAxis.add(groupTextX);
       groupAxis.add(groupTextY);
       groupAxis.add(groupTextZ);
+
 
       // xyz标识
       var str = this.makeTextSprite("X", {
@@ -483,6 +571,9 @@ export default {
       let planeXZ,
         planeXY,
         planeYZ,
+        planeXZ_up,
+        planeXY_up,
+        planeYZ_up,
         textX,
         textY,
         textZ,
@@ -498,7 +589,13 @@ export default {
           for (let i = 0; i < e.children.length; i++) {
             if (e.children[i].name == "planeXZ") {
               planeXZ = e.children[i];
-            } else if (e.children[i].name == "planeXY") {
+            } else if (e.children[i].name == "planeXZ_up") {
+              planeXZ_up = e.children[i];
+            } else if (e.children[i].name == "planeXY_up") {
+              planeXY_up = e.children[i];
+            }else if (e.children[i].name == "planeYZ_up") {
+              planeYZ_up = e.children[i];
+            }else if (e.children[i].name == "planeXY") {
               planeXY = e.children[i];
             } else if (e.children[i].name == "planeYZ") {
               planeYZ = e.children[i];
@@ -530,8 +627,11 @@ export default {
         this.camera.rotation._z < Math.PI / 2
       ) {
         planeXY.position.z = -this.options.imgSize;
+        planeXY_up.position.z = this.options.imgSize;
         planeYZ.position.x = -this.options.imgSize;
+        planeYZ_up.position.x = this.options.imgSize;
         planeXZ.position.y = -this.options.imgSize;
+        planeXZ_up.position.y = this.options.imgSize;
 
         textX.position.z = this.options.imgSize + 3;
         textX.position.y = -this.options.imgSize;
@@ -547,68 +647,69 @@ export default {
         textZ.position.x = -this.options.imgSize;
         strY.position.z = this.options.imgSize + 30;
         strY.position.x = -this.options.imgSize;
-      } else if (
-        this.camera.rotation._z > Math.PI / 2 &&
-        this.camera.rotation._z < Math.PI
-      ) {
-        planeXY.position.z = this.options.imgSize;
-        planeYZ.position.x = -this.options.imgSize;
+      } 
+      // else if (
+      //   this.camera.rotation._z > Math.PI / 2 &&
+      //   this.camera.rotation._z < Math.PI
+      // ) {
+      //   planeXY.position.z = this.options.imgSize;
+      //   planeYZ.position.x = -this.options.imgSize;
 
-        textX.position.z = -this.options.imgSize - 5;
-        textX.position.y = -this.options.imgSize;
-        strX.position.z = -this.options.imgSize - 60;
-        strX.position.y = -this.options.imgSize;
+      //   textX.position.z = -this.options.imgSize - 5;
+      //   textX.position.y = -this.options.imgSize;
+      //   strX.position.z = -this.options.imgSize - 60;
+      //   strX.position.y = -this.options.imgSize;
 
-        textY.position.x = this.options.imgSize + 3;
-        textY.position.y = -this.options.imgSize;
-        strZ.position.x = this.options.imgSize + 30;
-        strZ.position.y = -this.options.imgSize;
+      //   textY.position.x = this.options.imgSize + 3;
+      //   textY.position.y = -this.options.imgSize;
+      //   strZ.position.x = this.options.imgSize + 30;
+      //   strZ.position.y = -this.options.imgSize;
 
-        textZ.position.z = -this.options.imgSize - 10;
-        strY.position.z = -this.options.imgSize - 30;
-        strY.position.x = -this.options.imgSize;
-      } else if (
-        this.camera.rotation._z > -Math.PI &&
-        this.camera.rotation._z < -Math.PI / 2
-      ) {
-        planeXY.position.z = this.options.imgSize;
-        planeYZ.position.x = this.options.imgSize;
+      //   textZ.position.z = -this.options.imgSize - 10;
+      //   strY.position.z = -this.options.imgSize - 30;
+      //   strY.position.x = -this.options.imgSize;
+      // } else if (
+      //   this.camera.rotation._z > -Math.PI &&
+      //   this.camera.rotation._z < -Math.PI / 2
+      // ) {
+      //   planeXY.position.z = this.options.imgSize;
+      //   planeYZ.position.x = this.options.imgSize;
 
-        textX.position.z = -this.options.imgSize - 5;
-        textX.position.y = -this.options.imgSize;
-        strX.position.z = -this.options.imgSize - 60;
-        strX.position.y = -this.options.imgSize;
+      //   textX.position.z = -this.options.imgSize - 5;
+      //   textX.position.y = -this.options.imgSize;
+      //   strX.position.z = -this.options.imgSize - 60;
+      //   strX.position.y = -this.options.imgSize;
 
-        textY.position.x = -this.options.imgSize - 3;
-        textY.position.y = -this.options.imgSize;
-        strZ.position.x = -this.options.imgSize - 30;
-        strZ.position.y = -this.options.imgSize;
+      //   textY.position.x = -this.options.imgSize - 3;
+      //   textY.position.y = -this.options.imgSize;
+      //   strZ.position.x = -this.options.imgSize - 30;
+      //   strZ.position.y = -this.options.imgSize;
 
-        textZ.position.z = this.options.imgSize;
-        textZ.position.x = -this.options.imgSize - 10;
-        strY.position.z = this.options.imgSize;
-        strY.position.x = -this.options.imgSize - 30;
-      } else if (
-        this.camera.rotation._z > -Math.PI / 2 &&
-        this.camera.rotation._z < 0
-      ) {
-        planeXY.position.z = -this.options.imgSize;
-        textX.position.z = this.options.imgSize + 3;
-        textX.position.y = -this.options.imgSize;
-        strX.position.z = this.options.imgSize + 10;
-        strX.position.y = -this.options.imgSize;
+      //   textZ.position.z = this.options.imgSize;
+      //   textZ.position.x = -this.options.imgSize - 10;
+      //   strY.position.z = this.options.imgSize;
+      //   strY.position.x = -this.options.imgSize - 30;
+      // } else if (
+      //   this.camera.rotation._z > -Math.PI / 2 &&
+      //   this.camera.rotation._z < 0
+      // ) {
+      //   planeXY.position.z = -this.options.imgSize;
+      //   textX.position.z = this.options.imgSize + 3;
+      //   textX.position.y = -this.options.imgSize;
+      //   strX.position.z = this.options.imgSize + 10;
+      //   strX.position.y = -this.options.imgSize;
 
-        planeYZ.position.x = this.options.imgSize;
-        textY.position.x = -this.options.imgSize - 5;
-        textY.position.y = -this.options.imgSize;
-        strZ.position.x = -this.options.imgSize - 30;
-        strZ.position.y = -this.options.imgSize;
+      //   planeYZ.position.x = this.options.imgSize;
+      //   textY.position.x = -this.options.imgSize - 5;
+      //   textY.position.y = -this.options.imgSize;
+      //   strZ.position.x = -this.options.imgSize - 30;
+      //   strZ.position.y = -this.options.imgSize;
 
-        textZ.position.z = -this.options.imgSize;
-        textZ.position.x = -this.options.imgSize;
-        strY.position.z = -this.options.imgSize;
-        strY.position.x = -this.options.imgSize - 30;
-      }
+      //   textZ.position.z = -this.options.imgSize;
+      //   textZ.position.x = -this.options.imgSize;
+      //   strY.position.z = -this.options.imgSize;
+      //   strY.position.x = -this.options.imgSize - 30;
+      // }
     },
     // 获取鼠标选择对象
     getSelectObj(mouse, raycaster, e) {
@@ -623,6 +724,8 @@ export default {
       document.addEventListener("mousemove", this.onDocumentMouseMove, false);
       window.addEventListener("resize", this.onWindowResize, false);
     },
+
+    
     // 窗口大小变换事件
     onWindowResize(e) {
       this.camera.aspect = window.innerWidth / window.innerHeight;
