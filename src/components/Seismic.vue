@@ -7,6 +7,7 @@
 <script>
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import Stats from "three/examples/jsm/libs/stats.module.js";
 
 import { GUI } from "dat.gui";
@@ -21,6 +22,8 @@ export default {
       ambient: null,
       renderer: null,
       controls: null,
+      orbitControls: null,
+      transformControls: null,
       stats: null,
       width: 0,
       height: 0,
@@ -50,6 +53,7 @@ export default {
       this.initThree();
       this.initScene();
       this.initCamera();
+      this.initControls();
       this.initLight();
       this.initObject();
       // this.initGUI();
@@ -77,6 +81,19 @@ export default {
     initScene() {
       this.scene = new THREE.Scene();
     },
+    // 相机控制器配置
+    initControls() {
+      this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.orbitControls.enableDamping = true;
+      this.orbitControls.dampingFactor = 1;
+      this.orbitControls.screenSpacePanning = false;
+      this.orbitControls.maxPolarAngle = Math.PI / 2;
+      this.orbitControls.update();
+      // var orbitControls_self = this.orbitControls;
+      // this.transformControls.addEventListener("dragging-changed", function (event) {
+      //   orbitControls_self.enabled = !event.value;
+      // });
+    },
     // 相机初始化
     initCamera() {
       // 正交相机
@@ -99,12 +116,6 @@ export default {
         z: 0,
       });
 
-      // 相机控制器配置
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-      this.controls.enableDamping = true;
-      this.controls.dampingFactor = 1;
-      this.controls.screenSpacePanning = false;
-      // this.controls.maxPolarAngle = Math.PI / 2;
     },
     // 光线初始化
     initLight() {
@@ -116,7 +127,7 @@ export default {
       this.scene.add(this.pointLight);
       this.scene.add(this.ambient);
     },
-
+  
     createCube(x, y, z) {
       var cubeG = new THREE.BoxGeometry(x, y, z);
       var path = "../../../static/textures/";
@@ -177,6 +188,9 @@ export default {
       });
       var xViewPlane = new THREE.Mesh(xViewPlaneG, xViewPlaneM);
 
+      // this.transformControls.attach(xViewPlane);
+			// this.scene.add(this.transformControls);
+      
       groupImgPlane.add(xViewPlane);
 
       // y视角截面
@@ -304,11 +318,10 @@ export default {
     },
     // 渲染器
     render() {
-      this.renderer.clear();
+      // this.renderer.clear();
       this.renderer.render(this.scene, this.camera);
       // 光照跟随相机
       this.lightFollowCamera();
-      this.controls.update();
       this.stats.update();
       // 坐标轴视图更新
       this.axisUpdate();

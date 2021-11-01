@@ -20,6 +20,8 @@ export default {
       ambient: null,
       renderer: null,
       controls: null,
+      orbitControls: null,
+      transformControls: null,
 
       width: 0,
       height: 0,
@@ -49,6 +51,7 @@ export default {
       this.initThree();
       this.initScene();
       this.initCamera();
+      this.initControls();
       this.initLight();
       this.initObject();
       // this.initGUI();
@@ -73,6 +76,7 @@ export default {
     initScene() {
       this.scene = new THREE.Scene();
     },
+
     // 相机初始化
     initCamera() {
       // 正交相机
@@ -94,13 +98,21 @@ export default {
         y: 0,
         z: 0,
       });
+    },
+    // 相机控制器配置
+    initControls() {
+      this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.orbitControls.enableDamping = true;
+      this.orbitControls.dampingFactor = 1;
+      this.orbitControls.screenSpacePanning = false;
+      this.orbitControls.maxPolarAngle = Math.PI / 2;
 
-      // 相机控制器配置
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-      this.controls.enableDamping = true;
-      this.controls.dampingFactor = 1;
-      this.controls.screenSpacePanning = false;
-      // this.controls.maxPolarAngle = Math.PI / 2;
+      this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+      this.transformControls.addEventListener("change", this.render);
+
+      this.transformControls.addEventListener("dragging-changed", function (event) {
+        this.orbitControls.enabled = !event.value;
+      });
     },
     // 光线初始化
     initLight() {
@@ -130,8 +142,8 @@ export default {
         var texture = new THREE.TextureLoader().load(urls[i]);
         switch (i) {
           case 2:
-            // texture.rotation = Math.PI / 2;
-            // texture.center.set(50, 50);
+          // texture.rotation = Math.PI / 2;
+          // texture.center.set(50, 50);
         }
         maps.push(
           new THREE.MeshPhongMaterial({
@@ -244,10 +256,9 @@ export default {
       this.renderer.render(this.scene, this.camera);
       // 光照跟随相机
       this.lightFollowCamera();
-      this.controls.update();
       // 坐标轴视图更新
       this.axisUpdate();
-      requestAnimationFrame(this.render);
+      // requestAnimationFrame(this.render);
     },
     // 坐标轴初始化
     initAxis() {
