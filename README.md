@@ -12,7 +12,7 @@
 ![岛屿淹没](./doc/Mountain.png)
 
 
-[DEMO: 地质层位建模](https://shuang13.github.io/ThreeJsVis/dist/index.html#/Layer)
+[DEMO: 地质层位建模](https://shuang13.github.io/ThreeJsVis/dist/index.html)
 
 ![地质层位建模](./doc/layer.png)
 
